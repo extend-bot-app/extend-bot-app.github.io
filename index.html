@@ -1,1 +1,1284 @@
-in
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extend.Bot</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Auth Page */
+        .auth-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .auth-box {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .auth-box h1 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #1a1a2e;
+        }
+
+        .auth-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .auth-toggle button {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            background: transparent;
+            color: #333;
+            transition: all 0.3s;
+        }
+
+        .auth-toggle button.active {
+            background: #0066ff;
+            color: #fff;
+        }
+
+        .auth-box input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+        .auth-box button[type="submit"] {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0066ff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .auth-box button[type="submit"]:hover {
+            background: #0052cc;
+        }
+
+        .error-msg {
+            color: #ff4444;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Header */
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        .search-box {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: #f0f0f0;
+            border-radius: 6px;
+            padding: 0.5rem;
+            max-width: 300px;
+        }
+
+        .search-box input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 0.95rem;
+            margin-left: 0.5rem;
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #e0e0e0;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-buttons button {
+            flex: 1;
+            padding: 1rem;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .action-buttons button:hover {
+            background: #f9f9f9;
+            border-color: #0066ff;
+        }
+
+        /* Filter */
+        .filter-container {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            background: #fff;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            background: #0066ff;
+            color: #fff;
+            border-color: #0066ff;
+        }
+
+        /* Post Card */
+        .post-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: box-shadow 0.2s;
+        }
+
+        .post-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            justify-content: space-between;
+        }
+
+        .post-user {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #0066ff;
+            border-radius: 50%;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .user-info p {
+            margin: 0;
+        }
+
+        .user-info .username {
+            font-weight: 500;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .user-info .username:hover {
+            color: #0066ff;
+        }
+
+        .user-info .date {
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 0.25rem;
+        }
+
+        .history-btn {
+            padding: 0.4rem 0.8rem;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .history-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            min-width: 200px;
+            margin-top: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        .history-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-item p {
+            margin: 0;
+        }
+
+        .history-item .version {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .history-item .date {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+
+        .history-item .description {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        /* Post Content */
+        .post-text {
+            margin: 1rem 0;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        .ext-title {
+            margin: 0.5rem 0;
+            font-size: 1rem;
+        }
+
+        .readme-display {
+            background: #f8f8f8;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 200px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .readme-display.truncated::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, #f8f8f8);
+            height: 30px;
+        }
+
+        .read-more {
+            color: #0066ff;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .ext-info {
+            background: #f0f0f0;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .ext-info p {
+            margin: 0;
+            color: #666;
+        }
+
+        .ext-info .owner-note {
+            margin-top: 0.5rem;
+            color: #0066ff;
+            font-size: 0.8rem;
+        }
+
+        /* Interactions */
+        .post-interactions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .interaction-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .interaction-btn.liked {
+            color: #ff4444;
+            font-weight: 600;
+        }
+
+        /* Comments */
+        .comments-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .comment-input {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .comment-input input {
+            flex: 1;
+            padding: 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 0.95rem;
+        }
+
+        .comment-input button {
+            padding: 0.5rem 1rem;
+            background: #0066ff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .comment {
+            padding: 0.75rem;
+            background: #f5f5f5;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .comment p {
+            margin: 0;
+        }
+
+        .comment .username {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .comment .text {
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .comment .date {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 0.25rem;
+        }
+
+        /* Create Post Pages */
+        .create-container {
+            min-height: 100vh;
+            background: #f5f5f5;
+            padding: 2rem;
+        }
+
+        .create-box {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .create-form {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+        }
+
+        .create-form h2 {
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group textarea,
+        .form-group input[type="text"],
+        .form-group input[type="file"],
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+
+        .form-group .file-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0066ff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: #0052cc;
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Profile Page */
+        .profile-header {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: #0066ff;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .profile-info h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .profile-info p {
+            color: #666;
+            margin: 0.5rem 0 0 0;
+            font-size: 1rem;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow: auto;
+            word-break: break-word;
+        }
+
+        .modal-content .readme {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            margin-bottom: 1rem;
+        }
+
+        .modal-close {
+            padding: 0.5rem 1rem;
+            background: #0066ff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: #666;
+            font-size: 1.1rem;
+            padding: 2rem;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            .header-content {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .search-box {
+                max-width: none;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .filter-container {
+                justify-content: center;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .post-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Page -->
+    <div id="authPage" class="auth-container">
+        <div class="auth-box">
+            <h1>Extend.Bot</h1>
+            
+            <div class="auth-toggle">
+                <button id="signupBtn" class="active">Sign Up</button>
+                <button id="loginBtn">Log In</button>
+            </div>
+
+            <form id="authForm">
+                <input id="usernameInput" type="text" placeholder="Username" class="hidden">
+                <input id="emailInput" type="email" placeholder="Email" required>
+                <input id="passwordInput" type="password" placeholder="Password" required>
+                <button type="submit" id="authSubmit">Create Account</button>
+                <div id="authError" class="error-msg"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- App Page -->
+    <div id="appPage" class="hidden">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <h1>Extend.Bot</h1>
+                <div class="search-box">
+                    <span>🔍</span>
+                    <input id="searchInput" type="text" placeholder="Search...">
+                </div>
+                <button class="logout-btn" id="logoutBtn">Log out</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-container">
+            <!-- Feed View -->
+            <div id="feedView">
+                <div class="action-buttons">
+                    <button id="textPostBtn">+ Text Post</button>
+                    <button id="extensionBtn">+ AI Extension</button>
+                </div>
+
+                <div class="filter-container" id="filterContainer"></div>
+
+                <div id="postsList"></div>
+            </div>
+
+            <!-- Create Text Post -->
+            <div id="createTextView" class="hidden create-container">
+                <div class="create-box">
+                    <button class="back-btn" id="backBtn1">← Back</button>
+                    <div class="create-form">
+                        <h2>Create Text Post</h2>
+                        <div class="form-group">
+                            <textarea id="textPostInput" placeholder="What's on your mind?"></textarea>
+                        </div>
+                        <button class="submit-btn" id="submitTextBtn">Post</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Extension -->
+            <div id="createExtView" class="hidden create-container">
+                <div class="create-box">
+                    <button class="back-btn" id="backBtn2">← Back</button>
+                    <div class="create-form">
+                        <h2>Create AI Extension</h2>
+                        <div class="form-group">
+                            <label>Extension Type:</label>
+                            <select id="extTypeSelect">
+                                <option>OpenClaw</option>
+                                <option>OpenClaw Discord</option>
+                                <option>Any AI</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Readme (Markdown):</label>
+                            <textarea id="readmeInput" placeholder="# My Extension\nDescription here..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Update Description:</label>
+                            <input type="text" id="updateDescInput" placeholder="What's new in this version?">
+                        </div>
+                        <div class="form-group">
+                            <label>Extension File (any type):</label>
+                            <input type="file" id="fileInput">
+                            <div id="fileInfo" class="file-info"></div>
+                        </div>
+                        <button class="submit-btn" id="submitExtBtn">Post</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile View -->
+            <div id="profileView" class="hidden">
+                <button class="back-btn" id="backBtn3">← Back</button>
+                <div class="profile-header">
+                    <div class="profile-avatar"></div>
+                    <div class="profile-info">
+                        <h2 id="profileUsername">User</h2>
+                        <p id="profilePostCount">0 posts</p>
+                    </div>
+                </div>
+                <div id="profilePosts"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="readmeModal" class="modal hidden" onclick="if(event.target === this) closeModal()">
+        <div class="modal-content">
+            <div id="modalReadme" class="readme"></div>
+            <button class="modal-close" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDlpT3YcBYaEsdoEEae2OFYY5FWAtlh8pA",
+  authDomain: "extend-bot-c6cc4.firebaseapp.com",
+  projectId: "extend-bot-c6cc4",
+  storageBucket: "extend-bot-c6cc4.firebasestorage.app",
+  messagingSenderId: "1016242267788",
+  appId: "1:1016242267788:web:3a160a3e9f07a458d97da9",
+  measurementId: "G-WPVF7S4NMD"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+        // State
+        let currentUser = null;
+        let currentFilter = 'All';
+        let currentSearch = '';
+        let currentView = 'feed';
+        let viewingProfileUid = null;
+
+        const filters = ['All', 'Posts', 'OpenClaw Extensions', 'OpenClaw Discord Extensions', 'Any AI Extensions'];
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentUser = user;
+                    showApp();
+                    loadPosts();
+                } else {
+                    currentUser = null;
+                    showAuth();
+                }
+            });
+            setupEventListeners();
+            renderFilters();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('signupBtn').addEventListener('click', () => switchAuthMode(true));
+            document.getElementById('loginBtn').addEventListener('click', () => switchAuthMode(false));
+            document.getElementById('authForm').addEventListener('submit', handleAuth);
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('textPostBtn').addEventListener('click', () => switchView('createText'));
+            document.getElementById('extensionBtn').addEventListener('click', () => switchView('createExt'));
+            document.getElementById('submitTextBtn').addEventListener('click', submitTextPost);
+            document.getElementById('submitExtBtn').addEventListener('click', submitExtension);
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                currentSearch = e.target.value;
+                loadPosts();
+            });
+            document.getElementById('backBtn1').addEventListener('click', () => switchView('feed'));
+            document.getElementById('backBtn2').addEventListener('click', () => switchView('feed'));
+            document.getElementById('backBtn3').addEventListener('click', () => switchView('feed'));
+            document.getElementById('fileInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    document.getElementById('fileInfo').textContent = `File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                }
+            });
+        }
+
+        function switchAuthMode(isSignup) {
+            const signupBtn = document.getElementById('signupBtn');
+            const loginBtn = document.getElementById('loginBtn');
+            const usernameInput = document.getElementById('usernameInput');
+            const submitBtn = document.getElementById('authSubmit');
+
+            if (isSignup) {
+                signupBtn.classList.add('active');
+                loginBtn.classList.remove('active');
+                usernameInput.classList.remove('hidden');
+                submitBtn.textContent = 'Create Account';
+            } else {
+                loginBtn.classList.add('active');
+                signupBtn.classList.remove('active');
+                usernameInput.classList.add('hidden');
+                submitBtn.textContent = 'Sign In';
+            }
+            document.getElementById('authError').textContent = '';
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const isSignup = !document.getElementById('usernameInput').classList.contains('hidden');
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const username = document.getElementById('usernameInput').value;
+            const errorDiv = document.getElementById('authError');
+
+            errorDiv.textContent = '';
+
+            if (!email || !password) {
+                errorDiv.textContent = 'Fill in all fields';
+                return;
+            }
+
+            try {
+                if (isSignup) {
+                    if (!username) {
+                        errorDiv.textContent = 'Fill in all fields';
+                        return;
+                    }
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    await auth.currentUser.updateProfile({ displayName: username });
+                } else {
+                    await auth.signInWithEmailAndPassword(email, password);
+                }
+                document.getElementById('emailInput').value = '';
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('usernameInput').value = '';
+            } catch (error) {
+                errorDiv.textContent = error.message;
+            }
+        }
+
+        async function logout() {
+            await auth.signOut();
+        }
+
+        function showAuth() {
+            document.getElementById('authPage').classList.remove('hidden');
+            document.getElementById('appPage').classList.add('hidden');
+        }
+
+        function showApp() {
+            document.getElementById('authPage').classList.add('hidden');
+            document.getElementById('appPage').classList.remove('hidden');
+        }
+
+        function switchView(view) {
+            currentView = view;
+            document.getElementById('feedView').classList.add('hidden');
+            document.getElementById('createTextView').classList.add('hidden');
+            document.getElementById('createExtView').classList.add('hidden');
+            document.getElementById('profileView').classList.add('hidden');
+
+            if (view === 'feed') {
+                document.getElementById('feedView').classList.remove('hidden');
+            } else if (view === 'createText') {
+                document.getElementById('createTextView').classList.remove('hidden');
+            } else if (view === 'createExt') {
+                document.getElementById('createExtView').classList.remove('hidden');
+            } else if (view === 'profile') {
+                document.getElementById('profileView').classList.remove('hidden');
+            }
+        }
+
+        async function submitTextPost() {
+            const text = document.getElementById('textPostInput').value.trim();
+            if (!text) return alert('Write something!');
+
+            try {
+                await db.collection('posts').add({
+                    uid: currentUser.uid,
+                    username: currentUser.displayName || 'Anonymous',
+                    type: 'Posts',
+                    text,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    likes: [],
+                    comments: []
+                });
+
+                document.getElementById('textPostInput').value = '';
+                loadPosts();
+                switchView('feed');
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function submitExtension() {
+            const readme = document.getElementById('readmeInput').value.trim();
+            const file = document.getElementById('fileInput').files[0];
+            const extType = document.getElementById('extTypeSelect').value;
+            const updateDesc = document.getElementById('updateDescInput').value.trim();
+
+            if (!readme || !file) return alert('Fill in all fields!');
+
+            try {
+                const fileContent = await file.text();
+                const fileSize = new Blob([fileContent]).size;
+
+                if (fileSize > 500000) return alert('File too large (max 500KB)');
+
+                await db.collection('posts').add({
+                    uid: currentUser.uid,
+                    username: currentUser.displayName || 'Anonymous',
+                    type: `${extType} Extensions`,
+                    title: file.name,
+                    readme,
+                    fileContent,
+                    fileName: file.name,
+                    extType,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    likes: [],
+                    comments: [],
+                    versions: [{
+                        date: firebase.firestore.FieldValue.serverTimestamp(),
+                        description: updateDesc || 'Initial upload',
+                        content: fileContent
+                    }]
+                });
+
+                document.getElementById('readmeInput').value = '';
+                document.getElementById('fileInput').value = '';
+                document.getElementById('updateDescInput').value = '';
+                document.getElementById('fileInfo').textContent = '';
+                loadPosts();
+                switchView('feed');
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function renderFilters() {
+            const container = document.getElementById('filterContainer');
+            container.innerHTML = filters.map(f => 
+                `<button class="filter-btn ${f === 'All' ? 'active' : ''}" onclick="setFilter('${f}')">${f}</button>`
+            ).join('');
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === filter);
+            });
+            loadPosts();
+        }
+
+        async function loadPosts() {
+            try {
+                const container = document.getElementById('postsList');
+                container.innerHTML = '<div class="loading">Loading...</div>';
+
+                let query = db.collection('posts').orderBy('timestamp', 'desc');
+
+                if (viewingProfileUid) {
+                    query = query.where('uid', '==', viewingProfileUid);
+                }
+
+                const snapshot = await query.get();
+                let posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                if (currentFilter !== 'All') {
+                    posts = posts.filter(p => p.type === currentFilter);
+                }
+
+                if (currentSearch) {
+                    posts = posts.filter(p =>
+                        p.text?.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                        p.title?.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                        p.username?.toLowerCase().includes(currentSearch.toLowerCase())
+                    );
+                }
+
+                if (viewingProfileUid) {
+                    renderProfile(posts);
+                } else {
+                    renderPosts(posts);
+                }
+            } catch (error) {
+                document.getElementById('postsList').innerHTML = '<div class="error-msg">Error loading posts: ' + error.message + '</div>';
+            }
+        }
+
+        function renderPosts(posts) {
+            const container = document.getElementById('postsList');
+            if (posts.length === 0) {
+                container.innerHTML = '<div class="empty-state">No posts yet. Be the first!</div>';
+                return;
+            }
+
+            container.innerHTML = posts.map(post => createPostHTML(post)).join('');
+            attachPostListeners(posts);
+        }
+
+        function attachPostListeners(posts) {
+            posts.forEach(post => {
+                const likeBtn = document.getElementById(`like-${post.id}`);
+                const commentBtn = document.getElementById(`comment-${post.id}`);
+                const historyBtn = document.getElementById(`history-${post.id}`);
+                const userLink = document.getElementById(`user-${post.id}`);
+
+                if (likeBtn) likeBtn.addEventListener('click', () => toggleLike(post.id, post.likes));
+                if (commentBtn) commentBtn.addEventListener('click', () => toggleComments(post.id));
+                if (historyBtn && post.versions) {
+                    historyBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleHistory(post.id);
+                    });
+                }
+                if (userLink) userLink.addEventListener('click', () => viewProfile(post.uid));
+            });
+        }
+
+        function createPostHTML(post) {
+            const isTextPost = post.type === 'Posts';
+            const isExtension = !isTextPost;
+            const readmeLines = (post.readme || '').split('\n').length;
+            const needsTruncate = readmeLines > 6;
+            const displayReadme = needsTruncate ? post.readme.split('\n').slice(0, 6).join('\n') : post.readme;
+            const isLiked = (post.likes || []).includes(currentUser.uid);
+            const isOwner = post.uid === currentUser.uid;
+
+            let contentHTML = '';
+            if (isTextPost) {
+                contentHTML = `<p class="post-text">${escapeHtml(post.text)}</p>`;
+            } else {
+                contentHTML = `
+                    <h3 class="ext-title">${escapeHtml(post.title)}</h3>
+                    <div class="readme-display ${needsTruncate ? 'truncated' : ''}">${escapeHtml(displayReadme)}</div>
+                    ${needsTruncate ? `<button class="read-more" onclick="openReadme('${post.id}')">Read more...</button>` : ''}
+                    <div class="ext-info">
+                        <p>📦 <strong>${escapeHtml(post.extType)}</strong> — ${escapeHtml(post.fileName)}</p>
+                        ${isOwner ? '<p class="owner-note">You can share this with your AI bot</p>' : ''}
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="post-user">
+                            <div class="user-avatar" id="user-${post.id}"></div>
+                            <div>
+                                <div class="user-info">
+                                    <p class="username" id="user-${post.id}">${escapeHtml(post.username)}</p>
+                                    <p class="date">${post.timestamp ? new Date(post.timestamp.toDate()).toLocaleDateString() : 'Just now'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        ${isExtension && post.versions ? `
+                            <button class="history-btn" id="history-${post.id}">History ▼
+                                <div class="history-dropdown" id="dropdown-${post.id}" style="display: none;">
+                                    ${post.versions.map((v, i) => `
+                                        <div class="history-item">
+                                            <p class="version">v${post.versions.length - i}</p>
+                                            <p class="date">${v.date ? new Date(v.date.toDate()).toLocaleDateString() : 'Just now'}</p>
+                                            <p class="description">${escapeHtml(v.description)}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </button>
+                        ` : ''}
+                    </div>
+                    ${contentHTML}
+                    <div class="post-interactions">
+                        <button class="interaction-btn ${isLiked ? 'liked' : ''}" id="like-${post.id}">
+                            ${isLiked ? '❤️' : '🤍'} ${(post.likes || []).length}
+                        </button>
+                        <button class="interaction-btn" id="comment-${post.id}">
+                            💬 ${(post.comments || []).length}
+                        </button>
+                    </div>
+                    <div id="comments-${post.id}" style="display: none;" class="comments-section">
+                        <div class="comment-input">
+                            <input type="text" id="commentInput-${post.id}" placeholder="Add a comment...">
+                            <button onclick="submitComment('${post.id}')">Send</button>
+                        </div>
+                        ${(post.comments || []).map(c => `
+                            <div class="comment">
+                                <p class="username">${escapeHtml(c.username)}</p>
+                                <p class="text">${escapeHtml(c.text)}</p>
+                                <p class="date">${c.timestamp ? new Date(c.timestamp.toDate()).toLocaleDateString() : 'Just now'}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function toggleLike(postId, currentLikes) {
+            try {
+                const liked = (currentLikes || []).includes(currentUser.uid);
+                const postRef = db.collection('posts').doc(postId);
+
+                if (liked) {
+                    await postRef.update({
+                        likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                    });
+                } else {
+                    await postRef.update({
+                        likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                    });
+                }
+
+                loadPosts();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function toggleComments(postId) {
+            const commentsDiv = document.getElementById(`comments-${postId}`);
+            commentsDiv.style.display = commentsDiv.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleHistory(postId) {
+            const dropdown = document.getElementById(`dropdown-${postId}`);
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function submitComment(postId) {
+            const input = document.getElementById(`commentInput-${postId}`);
+            const text = input.value.trim();
+            if (!text) return;
+
+            try {
+                const postRef = db.collection('posts').doc(postId);
+                const newComment = {
+                    uid: currentUser.uid,
+                    username: currentUser.displayName || 'Anonymous',
+                    text,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                await postRef.update({
+                    comments: firebase.firestore.FieldValue.arrayUnion(newComment)
+                });
+
+                input.value = '';
+                loadPosts();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function openReadme(postId) {
+            // Would need to fetch the post data - for now this is a placeholder
+            alert('Readme modal feature requires fetching post data');
+        }
+
+        function closeModal() {
+            document.getElementById('readmeModal').classList.add('hidden');
+        }
+
+        function viewProfile(uid) {
+            viewingProfileUid = uid;
+            switchView('profile');
+            loadPosts();
+        }
+
+        function renderProfile(posts) {
+            // Get username from first post or from auth
+            const profileUsername = posts.length > 0 ? posts[0].username : 'User';
+
+            document.getElementById('profileUsername').textContent = profileUsername;
+            document.getElementById('profilePostCount').textContent = `${posts.length} posts`;
+
+            if (posts.length === 0) {
+                document.getElementById('profilePosts').innerHTML = '<div class="empty-state">No posts yet</div>';
+                return;
+            }
+
+            document.getElementById('profilePosts').innerHTML = posts.map(post => createPostHTML(post)).join('');
+            attachPostListeners(posts);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
